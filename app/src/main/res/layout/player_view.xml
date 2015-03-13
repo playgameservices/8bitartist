@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="fill_parent"
+    android:layout_height="wrap_content"
+    android:padding="3dp">
+
+    <android.widget.ImageView
+        android:id="@+id/person_image"
+        android:layout_width="30dp"
+        android:layout_height="30dp"
+        android:layout_alignParentLeft="true"
+        android:background="@drawable/none"
+        android:contentDescription="@string/hello_world" />
+
+    <TextView
+        android:id="@+id/person_name"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_alignTop="@+id/person_image"
+        android:layout_alignBottom="@+id/person_image"
+        android:layout_toRightOf="@+id/person_image"
+        android:layout_toLeftOf="@+id/person_score"
+        android:gravity="center"
+        android:text="@string/my_name"
+        android:textAppearance="@style/DefaultText"
+        android:background="@android:color/white"
+        android:paddingLeft="10dp"
+        android:paddingRight="10dp"/>
+
+    <TextView
+        android:id="@+id/person_score"
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
+        android:layout_alignTop="@+id/person_image"
+        android:layout_alignBottom="@+id/person_image"
+        android:gravity="center"
+        android:layout_alignParentRight="true"
+        android:text="0"
+        android:textAppearance="@style/DefaultText"
+        android:paddingLeft="10dp"
+        android:paddingRight="10dp"/>
+
+</RelativeLayout>

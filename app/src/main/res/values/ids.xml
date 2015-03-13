@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+Google Play game services IDs.
+Save this file as res/values/games-ids.xml in your project.
+-->
+<resources>
+    <string name="app_id">REPLACE_ME</string>
+
+    <string name="achievement_5_turns">REPLACE_ME</string>
+    <string name="achievement_10_turns">REPLACE_ME</string>
+    <string name="achievement_started_a_game">REPLACE_ME</string>
+    <string name="achievement_guessed_correctly">REPLACE_ME</string>
+    <string name="achievement_got_one_wrong">REPLACE_ME</string>
+</resources>

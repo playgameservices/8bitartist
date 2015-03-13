@@ -1,0 +1,29 @@
+apply plugin: 'com.android.library'
+
+android {
+    compileSdkVersion 21
+    buildToolsVersion '21.1.2'
+}
+
+repositories {
+    mavenCentral()
+}
+
+buildscript {
+    repositories {
+        mavenCentral()
+    }
+
+    dependencies {
+        classpath 'com.android.tools.build:gradle:1.0.0'
+    }
+}
+
+dependencies {
+    // The constants appcompat_v7_version, play_services version, etc. are defined in
+    // the build.gradle file in the root of the project
+    compile "com.android.support:appcompat-v7:${appcompat_v7_version}"
+    compile "com.android.support:support-v4:${support_v4_version}"
+    compile "com.google.android.gms:play-services:${play_services_version}"
+}
+

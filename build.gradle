@@ -1,0 +1,23 @@
+// Top-level build file where you can add configuration options common to all sub-projects/modules.
+
+buildscript {
+    repositories {
+        mavenCentral()
+    }
+    dependencies {
+        classpath 'com.android.tools.build:gradle:1.0.0'
+    }
+}
+
+allprojects {
+    repositories {
+        mavenCentral()
+    }
+
+    // Define constants common to all modules
+    ext {
+        appcompat_v7_version = '21.0.3'
+        support_v4_version = '21.0.3'
+        play_services_version = '7.0.+'
+    }
+}

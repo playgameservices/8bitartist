@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string name="app_name">8BitArtist</string>
+    <string name="hello_world">Hello world!</string>
+    <string name="words">time,people,man,day,child,mister,government,woman,number,world,house,hand,party,school,country,family,head,night,eye,home,question,power,money,book,water,car,line,face,road,door,hour,right,mother,period,center,police,city,million,cost,type,programme,girl,Father,force,health,street,mind,church,paper,bank,hundred,table,Death,staff,town,morning,letter,foot,boy,art,teacher,voice,arm,club,window,light,wife,pound,tax,nature,bed,hospital,wall,computer,bit,son,south,king,secretary,picture,thousand,shop,animal,evening,heart,doctor,hair,love,music,piece,tree,plant,pressure,fire,garden,rest,space,sea,step,couple,hotel,station,cup,cell,lady,skull,sound,floor,science,college,horse,answer,army,dog,look,brother,husband,element,glass,leg,park,summer,baby,daughter,sun,box,river,stone,oil,disease,goal,sign,fish,library,blood,island,television,bar,talk,no,star,mouth,second,chair,Earth,card,sister,bird,fear,miss,option,quarter,match,radio,railway,target,corner,finger,forest,afternoon,ball,kitchen,peace,scale,speech,hill,shoulder,tea,marriage,farm,file,newspaper,branch,copy,spirit,train,gas,museum,shape,artist,queen,exercise,fig,credit,half,bag,gold,link,skin,boat,dad,prison,wine,winter,injury,key,painting,phone,drink,judge,ship,visitor,volume,background,cabinet,engine,smile,victim,yard,bus,coffee,investigation,mountain,song,dinner,football,tour,wood,bridge,flat,gentleman,lip,sheet,audience,code,loan,prince,theatre,freedom,magazine,plate,rain,writing,dream,factory,spring,victory,aircraft,decade,egg,reduction,bedroom,enterprise,middle,murder,neck,run,tape,weapon,acid,bottle,ear,store,teaching,transfer,Wave,channel,cut,lunch,photograph,temperature,waste,block,experiment,guide,nurse,silence,captain,journey,map,noise,pool,scientist,search,sequence,sky,sum,trip,violence,cat,display,gate,gun,heat,location,professor,reading,combination,drive,learning,prospect,soldier,tool,tooth,troop,breath,castle,coal,crown,flow,lane,mistake,motion,release,total,Jack-o-lantern,stormtrooper,lion,alien,Thor,spacewalk,velocoraptor attack,anime,jaws,clockwork,orange,anonymous,tangled,minion,tombstone,magic lamp,dragon,pi,pie,birthday cake,songbird,parrot,Friday,Android developer,lungs,spotted frog,big bad wolf,adorable bunny,juggling,axe throwing,counting sheep,unfortunate hat,awesome hat,granulated sugar,extreme skiing,my house,wicked witch,surprised,spinach puff,broccoli,squid,released kraken,superwhale</string>
+    <string name="sign_out">Sign Out</string>
+    <string name="clear">Clear</string>
+    <string name="done">Done</string>
+    <string name="eight_bit_instructions">
+        8-Bit artist is a drawing game: you are given a word to draw in 100 pixels and four colors!
+
+        In Online Mode you can find remote opponents using Real-Time Multiplayer. In Party Mode you can find opponents on your WiFi network using the Nearby Connections API.
+    </string>
+    <string name="start_match">Play Online</string>
+    <string name="achievements">Achievements</string>
+    <string name="please_log_in">Welcome to 8-Bit Artist!  Please log in!</string>
+    <string name="my_name">Player xxxx</string>
+    <string name="party_mode">Party Mode</string>
+    <string name="join_party_mode">Join Party</string>
+    <string name="host_party_mode">Host Party</string>
+    <string name="endpoint_found">Endpoint Found</string>
+    <string name="endpoint_connect_fmt">Do you want to connect to %s?</string>
+    <string name="connect">Connect</string>
+    <string name="no">No</string>
+    <string name="automatch_player">Automatch Player</string>
+
+</resources>
