@@ -19,10 +19,14 @@
     <string name="party_mode">Party Mode</string>
     <string name="join_party_mode">Join Party</string>
     <string name="host_party_mode">Host Party</string>
-    <string name="endpoint_found">Endpoint Found</string>
+    <string name="endpoint_found">Select Game to join:</string>
     <string name="endpoint_connect_fmt">Do you want to connect to %s?</string>
     <string name="connect">Connect</string>
     <string name="no">No</string>
     <string name="automatch_player">Automatch Player</string>
 
+    <string name="sign_in_failed">Failed to sign in. Please check your network connection and try again.</string>
+    <string name="app_misconfigured">The application is incorrectly configured. Check that the package name and signing certificate match the client ID created in Developer Console. Also, if the application is not yet published, check that the account you are trying to sign in with is listed as a tester account. See logs for more information.</string>
+    <string name="license_failed">License check failed.</string>
+    <string name="unknown_error">Unknown error.</string>
 </resources>

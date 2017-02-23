@@ -19,10 +19,10 @@ import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.widget.ArrayAdapter;
+
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
-import java.util.Set;
 
 /**
  * Simple wrapper for an AlertDialog with a list of items, each of which has a display string and
@@ -37,9 +37,8 @@ public class MyListDialog {
     public MyListDialog(Context context, AlertDialog.Builder builder,
                         DialogInterface.OnClickListener listener) {
 
-        mItemMap = new HashMap<String, String>();
-        mAdapter = new ArrayAdapter<String>(context, android.R.layout.select_dialog_singlechoice);
-
+        mItemMap = new HashMap<>();
+        mAdapter = new ArrayAdapter<>(context, android.R.layout.select_dialog_singlechoice);
         // Create dialog from builder
         builder.setAdapter(mAdapter, listener);
         mDialog = builder.create();
@@ -52,8 +51,9 @@ public class MyListDialog {
      * @param value a value associated with the item that should not be displayed.
      */
     public void addItem(String title, String value) {
-        mItemMap.put(title, value);
-        mAdapter.add(title);
+        if(mItemMap.put(title, value) == null) {
+            mAdapter.add(title);
+        }
     }
 
     /**
