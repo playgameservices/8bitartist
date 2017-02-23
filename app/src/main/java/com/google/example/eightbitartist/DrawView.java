@@ -46,11 +46,11 @@ public class DrawView extends View implements OnTouchListener, ColorChooser.Colo
     // These are the four colors provided for painting.
     // If years of classic has taught me anything, these
     // are enough colors for anything. Anything at all.
-    public static final int COLOR_MAP[] = { 0xFF000000, 0xFF0000FF, 0xFFFF0000, 0xFF00FF00 };
+    public static final int COLOR_MAP[] = {0xFF000000, 0xFF0000FF, 0xFFFF0000, 0xFF00FF00};
 
     // Interface for the Activity to know when a square is drawn
     public interface DrawViewListener {
-        public void onDrawEvent(int gridX, int gridY, short colorIndex);
+        void onDrawEvent(int gridX, int gridY, short colorIndex);
     }
 
     // Some temporary variables so we don't allocate while rendering
@@ -84,6 +84,7 @@ public class DrawView extends View implements OnTouchListener, ColorChooser.Colo
 
     /**
      * Convert from screen space.
+     *
      * @param screenSpaceCoordinate the coordinate in screen space.
      * @return the pixel coordinate in the View.
      */
@@ -186,8 +187,9 @@ public class DrawView extends View implements OnTouchListener, ColorChooser.Colo
 
     /**
      * Paint a pixel with the currently selected color.
-     * @param gridX the column of the pixel to paint.
-     * @param gridY the row of the pixel to paint.
+     *
+     * @param gridX      the column of the pixel to paint.
+     * @param gridY      the row of the pixel to paint.
      * @param colorIndex the index into the color array to paint with.
      */
     public void setMacroPixel(int gridX, int gridY, short colorIndex) {

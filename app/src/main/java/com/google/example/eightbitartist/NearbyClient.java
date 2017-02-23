@@ -19,6 +19,7 @@ import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
 import android.util.Log;
 import android.widget.Toast;
 
@@ -27,58 +28,84 @@ import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.common.api.ResultCallback;
 import com.google.android.gms.common.api.Status;
 import com.google.android.gms.nearby.Nearby;
-import com.google.android.gms.nearby.connection.AppMetadata;
 import com.google.android.gms.nearby.connection.Connections;
 
+import java.io.UnsupportedEncodingException;
 import java.util.HashMap;
 
 /**
  * A wrapper for a GoogleApiClient that communicates with the Nearby Connections API. The
  * NearbyClient can be in one of two configurations:
- *      1) Host - this is the coordinating hub. The host will maintain a single connection with
- *      each client in the match. The clients do not maintain any direct connections to each other.
- *      The host can 'broadcast' a message from one client to all others to give the appearance that
- *      the network is densely connected. The Host tracks all participants that enter and leave
- *      the match and sends the appropriate messages to the Clients.
- *
- *      2) Client - a client is connected only to the Host.  When the client wants to communicate
- *      with another Client, it asks the Host to broadcast a message.
+ * 1) Host - this is the coordinating hub. The host will maintain a single connection with
+ * each client in the match. The clients do not maintain any direct connections to each other.
+ * The host can 'broadcast' a message from one client to all others to give the appearance that
+ * the network is densely connected. The Host tracks all participants that enter and leave
+ * the match and sends the appropriate messages to the Clients.
+ * <p>
+ * 2) Client - a client is connected only to the Host.  When the client wants to communicate
+ * with another Client, it asks the Host to broadcast a message.
  */
 public class NearbyClient implements
         GoogleApiClient.ConnectionCallbacks,
         GoogleApiClient.OnConnectionFailedListener,
-        Connections.ConnectionRequestListener,
-        Connections.MessageListener,
-        Connections.EndpointDiscoveryListener {
+        Connections.MessageListener {
+
+    private Connections.ConnectionRequestListener myConnectionRequestListener =
+            new Connections.ConnectionRequestListener() {
+                @Override
+                public void onConnectionRequest(String remoteEndpointId, String
+                        remoteEndpointName, byte[] bytes) {
+                    NearbyClient.this.onConnectionRequest(remoteEndpointId,
+                            remoteEndpointName, bytes);
+                }
+            };
+    private Connections.EndpointDiscoveryListener myEndpointDiscoveryListener =
+            new Connections.EndpointDiscoveryListener() {
+                @Override
+                public void onEndpointFound(String endpointId,
+                                            String serviceId,
+                                            String name) {
+                    NearbyClient.this.onEndpointFound(endpointId, serviceId,
+                            name);
+                }
+
+                @Override
+                public void onEndpointLost(String remoteEndpointId) {
+                    NearbyClient.this.onEndpointLost(remoteEndpointId);
+                }
+            };
 
     interface NearbyClientListener {
 
         /**
          * GoogleApiClient is connected, safe to start using the Nearby API through the client.
          */
-        public void onServiceConnected();
+        void onServiceConnected();
 
         /**
          * Connected to a remote endpoint.
-         * @param endpointId the endpoint id of the remote endpoint.
-         * @param deviceId the device id of the remote endpoint.
-         * @param endpointName the display name of the remote endpoint.
+         *
+         * @param endpointId   the endpoint id of the remote endpoint.
+         * @param endpointName the name of the remote endpoint.
          */
-        public void onConnectedToEndpoint(String endpointId, String deviceId, String endpointName);
+        void onConnectedToEndpoint(String endpointId, String
+                endpointName);
 
         /**
          * Disconnected from a remote endpoint.
+         *
          * @param endpointId the id of the remote endpoint.
-         * @param deviceId the device id of the remote endpoint.
+         * @param deviceId   the device id of the remote endpoint.
          */
-        public void onDisconnectedFromEndpoint(String endpointId, String deviceId);
+        void onDisconnectedFromEndpoint(String endpointId, String deviceId);
 
         /**
          * Received a message from a remote endpoint.
+         *
          * @param remoteEndpointId the id of the remote endpoint.
-         * @param payload the message contents, as an array of bytes,
+         * @param payload          the message contents, as an array of bytes,
          */
-        public void onMessageReceived(String remoteEndpointId, byte[] payload);
+        void onMessageReceived(String remoteEndpointId, byte[] payload);
     }
 
     private static final String TAG = NearbyClient.class.getSimpleName();
@@ -102,25 +129,20 @@ public class NearbyClient implements
     // A set of all connected clients, used by the Host.
     private HashMap<String, DrawingParticipant> mConnectedClients = new HashMap<>();
 
-    // A set of all endpointId --> deviceId mappings we have seen
-    private HashMap<String, String> mEndpointToDeviceIdMap = new HashMap<>();
-
     // The id of the Host, used by the client.
     private String mHostId;
 
     // The state of the NearbyClient (one of STATE_IDLE, STATE_DISCOVERING, or STATE_ADVERTISING)
     private int mState;
 
-    // If discovering, the ID of services to discover
-    private String mDiscoveringServiceId;
-
     // List dialog to display available endpoints
     private MyListDialog mListDialog;
 
     /**
      * Create a new NearbyClient.
-     * @param context the creating context, generally an Activity or Fragment.
-     * @param isHost true if this client should act as host, false otherwise.
+     *
+     * @param context  the creating context, generally an Activity or Fragment.
+     * @param isHost   true if this client should act as host, false otherwise.
      * @param listener a NearbyClientListener to be notified of events.
      */
     public NearbyClient(Context context, boolean isHost, NearbyClientListener listener) {
@@ -139,18 +161,20 @@ public class NearbyClient implements
      * Begin advertising for Nearby Connections.
      */
     public void startAdvertising() {
-        String myName = null;
-        AppMetadata myMetadata = null;
         long NO_TIMEOUT = 0L;
-        Nearby.Connections.startAdvertising(mGoogleApiClient, myName, myMetadata, NO_TIMEOUT, this)
+
+        Nearby.Connections.startAdvertising(mGoogleApiClient, null, null,
+                NO_TIMEOUT, myConnectionRequestListener)
                 .setResultCallback(new ResultCallback<Connections.StartAdvertisingResult>() {
                     @Override
                     public void onResult(Connections.StartAdvertisingResult result) {
                         if (result.getStatus().isSuccess()) {
-                            Log.d(TAG, "Advertising as " + result.getLocalEndpointName());
+                            Log.d(TAG, "Advertising as " +
+                                    result.getLocalEndpointName());
                             mState = STATE_ADVERTISING;
                         } else {
-                            Log.w(TAG, "Failed to start advertising: " + result.getStatus());
+                            Log.w(TAG, "Failed to start advertising: " +
+                                    result.getStatus());
                             mState = STATE_IDLE;
                         }
                     }
@@ -167,14 +191,15 @@ public class NearbyClient implements
 
     /**
      * Begin discovering Nearby Connections.
+     *
      * @param serviceId the ID of advertising services to discover.
      */
     public void startDiscovery(String serviceId) {
-        mDiscoveringServiceId = serviceId;
-        Nearby.Connections.startDiscovery(mGoogleApiClient, serviceId, 0L, this)
+        Nearby.Connections.startDiscovery(mGoogleApiClient, serviceId, 0L,
+                myEndpointDiscoveryListener)
                 .setResultCallback(new ResultCallback<Status>() {
                     @Override
-                    public void onResult(Status status) {
+                    public void onResult(@NonNull Status status) {
                         if (status.isSuccess()) {
                             Log.d(TAG, "Started discovery.");
                             mState = STATE_DISCOVERING;
@@ -195,7 +220,8 @@ public class NearbyClient implements
     }
 
     /**
-     * Disconnect the Google API client, disconnect from all connected endpoints and stop
+     * Disconnect the Google API client, disconnect from all connected
+     * endpoints and stop
      * discovery/advertising when applicable.
      */
     public void onStop() {
@@ -210,73 +236,95 @@ public class NearbyClient implements
     /**
      * Send a reliable message to the Host from a Client.
      */
-    public void sendMessageToHost(byte[] payload) {
-        Nearby.Connections.sendReliableMessage(mGoogleApiClient, mHostId, payload);
-    }
-
-    /**
-     * Send a reliable message to all other participants by routing through the Host.
-     * */
-    public void broadcastMessage(byte[] payload) {
-        Log.d(TAG, "broadcastMessage: " + new String(payload));
-        if (mIsHost) {
-            sendMessageToAll(payload);
-        } else {
-            sendMessageToHost(payload);
+    public void sendMessageToHost(String message) {
+        try {
+            byte[] payload = message.getBytes("UTF-8");
+            Nearby.Connections.sendReliableMessage(mGoogleApiClient,
+                    mHostId, payload);
+        } catch (UnsupportedEncodingException e) {
+            Log.e(TAG, "Cannot encode " + message + " to UTF-8?");
         }
     }
 
-    private void sendMessageToAll(byte[] payload) {
-        sendMessageToAll(payload, null);
+    /**
+     * Send a reliable message to all other participants by routing
+     * through the Host.
+     *
+     * @param message - the message to send.
+     */
+    public void broadcastMessage(String message) {
+        Log.d(TAG, "broadcastMessage: " + message);
+        if (mIsHost) {
+            sendMessageToAll(message, null);
+        } else {
+            sendMessageToHost(message);
+        }
     }
 
     /**
-     * Send a message from the Host to all Clients, with the option to exclude one participant.
-     * @param payload byte array to send as payload.
-     * @param excludingId the participant ID of the participant to exclude. Null to send to all.
+     * Send a message from the Host to all Clients, with the option to
+     * exclude one participant.
+     *
+     * @param message     string to send as payload.
+     * @param excludingId the participant ID of the participant to exclude.
+     *                    Null to send to all.
      */
-    public void sendMessageToAll(byte[] payload, String excludingId) {
+    public void sendMessageToAll(String message, String excludingId) {
         for (DrawingParticipant participant : mConnectedClients.values()) {
             if (!participant.getMessagingId().equals(excludingId)) {
-                sendMessageTo(participant.getMessagingId(), payload);
+                sendMessageTo(participant.getMessagingId(), message);
             }
         }
     }
 
     /**
      * Send a message to a specific participant.
-     * @param endpointId the endpoint ID of the participant that will receive the message.
-     * @param payload byte array to send as payload.
+     *
+     * @param endpointId the endpoint ID of the participant that will
+     *                   receive the message.
+     * @param message    String to send as payload.
      */
-    public void sendMessageTo(String endpointId, byte[] payload) {
-        Nearby.Connections.sendReliableMessage(mGoogleApiClient, endpointId, payload);
+    public void sendMessageTo(String endpointId, String message) {
+
+        try {
+            byte[] payload = message.getBytes("UTF-8");
+            Log.d(TAG, "Sending message: " + message);
+            Nearby.Connections.sendReliableMessage(mGoogleApiClient,
+                    endpointId, payload);
+        } catch (UnsupportedEncodingException e) {
+            Log.e(TAG, "Cannot encode " + message + " to UTF-8?");
+        }
     }
 
     /**
      * Send a connection request to a remote endpoint. If the request is successful, notify the
      * listener and add the connection to the Set.  Otherwise, show an error Toast.
-     * @param endpointId the endpointID to connect to.
-     * @param deviceId the device ID of the endpoint to connect to.
+     *
+     * @param endpointId   the endpointID to connect to.
      * @param endpointName the name of the endpoint to connect to.
      */
-    private void connectTo(final String endpointId, final String deviceId,
+    private void connectTo(final String endpointId,
                            final String endpointName) {
         Log.d(TAG, "connectTo:" + endpointId);
-        Nearby.Connections.sendConnectionRequest(mGoogleApiClient, null, endpointId, null,
+        Nearby.Connections.sendConnectionRequest(mGoogleApiClient, null,
+                endpointId, null,
                 new Connections.ConnectionResponseCallback() {
                     @Override
                     public void onConnectionResponse(String remoteEndpointId, Status status,
                                                      byte[] payload) {
-                        Log.d(TAG, "onConnectionResponse:" + remoteEndpointId + ":" + status);
+                        Log.d(TAG, "onConnectionResponse:" +
+                                remoteEndpointId + ":" + status);
                         if (status.isSuccess()) {
                             // Connection successful, notify listener
                             Toast.makeText(mContext, "Connected to: " + endpointName,
                                     Toast.LENGTH_SHORT).show();
 
                             mHostId = remoteEndpointId;
-                            mConnectedClients.put(remoteEndpointId, new DrawingParticipant(
-                                    remoteEndpointId, deviceId, endpointName));
-                            mListener.onConnectedToEndpoint(mHostId, deviceId, endpointName);
+                            mConnectedClients.put(remoteEndpointId,
+                                    new DrawingParticipant(
+                                    remoteEndpointId, endpointName));
+                            mListener.onConnectedToEndpoint(mHostId,
+                                    endpointName);
                         } else {
                             // Connection not successful, show error
                             Toast.makeText(mContext, "Error: failed to connect.",
@@ -284,14 +332,6 @@ public class NearbyClient implements
                         }
                     }
                 }, this);
-    }
-
-    public String getMyEndpointId() {
-        return Nearby.Connections.getLocalEndpointId(mGoogleApiClient);
-    }
-
-    public String getMyDeviceId() {
-        return Nearby.Connections.getLocalDeviceId(mGoogleApiClient);
     }
 
     public int getState() {
@@ -314,38 +354,38 @@ public class NearbyClient implements
     }
 
     @Override
-    public void onConnectionFailed(ConnectionResult connectionResult) {
+    public void onConnectionFailed(@NonNull ConnectionResult connectionResult) {
         Log.d(TAG, "onConnectionFailed:" + connectionResult);
     }
 
-    @Override
-    public void onConnectionRequest(final String remoteEndpointId, final String remoteDeviceId,
-                                    final String remoteEndpointName, byte[] payload) {
-        Log.d(TAG, "onConnectionRequest:" + remoteEndpointId + ":" + remoteDeviceId +
-                ":" + remoteEndpointName);
+    public void onConnectionRequest(final String remoteEndpointId, final
+    String remoteName,
+                                    byte[] payload) {
+        Log.d(TAG, "onConnectionRequest:" + remoteEndpointId + ":" + remoteName);
 
         if (mIsHost) {
             // The host accepts all connection requests it gets.
-            byte[] myPayload = null;
-            Nearby.Connections.acceptConnectionRequest(mGoogleApiClient, remoteEndpointId,
-                    myPayload, this).setResultCallback(new ResultCallback<Status>() {
+            Nearby.Connections.acceptConnectionRequest(mGoogleApiClient,
+                    remoteEndpointId,
+                    null, this).setResultCallback(new ResultCallback<Status>() {
                 @Override
-                public void onResult(Status status) {
-                    Log.d(TAG, "acceptConnectionRequest:" + status + ":" + remoteEndpointId);
+                public void onResult(@NonNull Status status) {
+                    Log.d(TAG, "acceptConnectionRequest:" + status + ":" +
+                            remoteEndpointId);
                     if (status.isSuccess()) {
-                        Toast.makeText(mContext, "Connected to " + remoteEndpointName,
+                        Toast.makeText(mContext, "Connected to " + remoteName,
                                 Toast.LENGTH_SHORT).show();
 
                         // Record connection
-                        DrawingParticipant participant = new DrawingParticipant(remoteEndpointId,
-                                remoteDeviceId, remoteEndpointName);
+                        DrawingParticipant participant =
+                                new DrawingParticipant(remoteEndpointId,
+                                remoteName);
                         mConnectedClients.put(remoteEndpointId, participant);
 
                         // Notify listener
-                        mListener.onConnectedToEndpoint(remoteEndpointId, remoteDeviceId,
-                                remoteEndpointName);
+                        mListener.onConnectedToEndpoint(remoteEndpointId, remoteName);
                     } else {
-                        Toast.makeText(mContext, "Failed to connect to: " + remoteEndpointName,
+                        Toast.makeText(mContext, "Failed to connect to: " + remoteName,
                                 Toast.LENGTH_SHORT).show();
                     }
                 }
@@ -368,33 +408,35 @@ public class NearbyClient implements
         Log.d(TAG, "onDisconnected:" + remoteEndpointId);
         DrawingParticipant removed = mConnectedClients.remove(remoteEndpointId);
         if (removed != null) {
-            mListener.onDisconnectedFromEndpoint(removed.getMessagingId(), removed.getPersistentId());
+            mListener.onDisconnectedFromEndpoint(removed.getMessagingId(),
+                    removed.getPersistentId());
         }
     }
 
-    @Override
-    public void onEndpointFound(final String endpointId, final String deviceId,
-                                String serviceId, final String endpointName) {
-        Log.d(TAG, "onEndpointFound:" + endpointId + ":" + deviceId + ":" + serviceId +
-                ":" + endpointName);
-
-        // Record the mapping from endpointID --> deviceID so we can look it up later
-        mEndpointToDeviceIdMap.put(endpointId, deviceId);
+    public void onEndpointFound(final String endpointId, final String serviceId,
+                                String endpointName) {
+        Log.d(TAG, "onEndpointFound:" + endpointId + ":" + serviceId + ":" +
+                endpointName);
 
         // Ask the user if they would like to connect
         if (mListDialog == null) {
             AlertDialog.Builder builder = new AlertDialog.Builder(mContext)
                     .setCancelable(false)
                     .setTitle(mContext.getString(R.string.endpoint_found))
-                    .setNegativeButton(mContext.getString(R.string.no), null);
+                    .setIcon(R.drawable.ic_launcher)
+                    .setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                            dialog.dismiss();
+                        }
+                    });
 
             mListDialog = new MyListDialog(mContext, builder, new DialogInterface.OnClickListener() {
                 @Override
                 public void onClick(DialogInterface dialog, int which) {
                     String clickedEndpointName = mListDialog.getItemKey(which);
                     String clickedEndpointId = mListDialog.getItemValue(which);
-                    String clickedDeviceId = mEndpointToDeviceIdMap.get(clickedEndpointId);
-                    connectTo(clickedEndpointId, clickedDeviceId, clickedEndpointName);
+                    connectTo(clickedEndpointId, clickedEndpointName);
                 }
             });
         }
@@ -403,7 +445,6 @@ public class NearbyClient implements
         mListDialog.show();
     }
 
-    @Override
     public void onEndpointLost(String remoteEndpointId) {
         Log.d(TAG, "onEndpointLost:" + remoteEndpointId);
         mListDialog.removeItemByValue(remoteEndpointId);

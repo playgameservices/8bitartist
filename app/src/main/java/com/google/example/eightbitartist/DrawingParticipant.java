@@ -50,11 +50,13 @@ public class DrawingParticipant {
     /**
      * Initialize for a Nearby Connections player
      */
-    public DrawingParticipant(String endpointId, String deviceId, String name) {
+    public DrawingParticipant(String endpointId, String displayName) {
         isLocal = true;
         this.messagingId = endpointId;
-        this.persistentId = deviceId;
-        this.displayName = name;
+
+        // use the display name as the persistent id for nearby.
+        this.persistentId = displayName;
+        this.displayName = displayName;
         this.iconImageUri = null;
         this.score = 0;
     }

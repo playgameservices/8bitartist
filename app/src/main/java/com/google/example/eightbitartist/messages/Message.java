@@ -15,43 +15,11 @@
  */
 package com.google.example.eightbitartist.messages;
 
-import android.util.Log;
-
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-
 /**
  * Base class for all messages sent between 8BitArtist devices.
- *      String type - a tag indicating the class of the message, used by the recipient as an
- *              instruction for how to deserialize.
  */
 public class Message {
 
-    private static final String TAG = Message.class.getSimpleName();
-    private String type;
-
-    /** Default constructor required for Jackson **/
-    public Message() {}
-
-    public Message(String type) {
-        this.type = type;
+    public Message() {
     }
-
-    public String persist(ObjectMapper objectMapper) {
-        try {
-            return objectMapper.writeValueAsString(this);
-        } catch (JsonProcessingException e) {
-            Log.e(TAG, "Could not persist message of type " + type, e);
-            return "";
-        }
-    }
-
-    public String getType() {
-        return type;
-    }
-
-    public void setType(String type) {
-        this.type = type;
-    }
-
 }

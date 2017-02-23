@@ -23,7 +23,7 @@
         android:layout_toLeftOf="@+id/person_score"
         android:gravity="center"
         android:text="@string/my_name"
-        android:textAppearance="@style/DefaultText"
+
         android:background="@android:color/white"
         android:paddingLeft="10dp"
         android:paddingRight="10dp"/>
@@ -37,7 +37,6 @@
         android:gravity="center"
         android:layout_alignParentRight="true"
         android:text="0"
-        android:textAppearance="@style/DefaultText"
         android:paddingLeft="10dp"
         android:paddingRight="10dp"/>
 

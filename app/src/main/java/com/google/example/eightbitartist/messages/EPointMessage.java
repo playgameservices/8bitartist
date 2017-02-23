@@ -18,22 +18,20 @@ package com.google.example.eightbitartist.messages;
 import com.google.example.eightbitartist.EPoint;
 
 /**
- * Message that the artist has drawn a point and the recipient should mirror it on their own
- * DrawView instance.
- *      EPoint point - the location of the drawn point.
- *      int color - the index of the drawn color in the array of colors.
+ * Message that the artist has drawn a point and the recipient
+ * should mirror it on their own DrawView instance.
+ * EPoint point - the location of the drawn point.
+ * int color - the index of the drawn color in the array of colors.
  */
 public class EPointMessage extends Message {
-
-    public static final String TAG = EPointMessage.class.getSimpleName();
 
     private EPoint point;
     private int color;
 
-    public EPointMessage() {}
+    public EPointMessage() {
+    }
 
     public EPointMessage(EPoint point, int color) {
-        super(TAG);
         this.point = point;
         this.color = color;
     }

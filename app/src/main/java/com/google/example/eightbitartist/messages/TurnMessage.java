@@ -19,23 +19,23 @@ import java.util.List;
 
 /**
  * Message containing the data relevant to one turn of a match.
- *      int turnNumber - the absolute turn number in this match, beginning at 0 and increasing.
- *      List words - the words to be displayed as guessing choices, in order.
- *      int correctWord - the index into `words` of the correct choice.
+ * int turnNumber - the absolute turn number in this match,
+ * beginning at 0 and increasing.
+ * List words - the words to be displayed as guessing choices, in order.
+ * int correctWord - the index into `words` of the correct choice.
  */
 public class TurnMessage extends Message {
-
-    public static final String TAG = TurnMessage.class.getSimpleName();
-
     private int turnNumber;
     private List<String> words;
     private int correctWord;
 
-    /** Default constructor required for Jackson **/
-    public TurnMessage() {}
+    /**
+     * Default constructor required for Jackson
+     **/
+    public TurnMessage() {
+    }
 
     public TurnMessage(int turnNumber, List<String> words, int correctWord) {
-        super(TAG);
         this.turnNumber = turnNumber;
         this.words = words;
         this.correctWord = correctWord;

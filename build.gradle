@@ -2,22 +2,19 @@
 
 buildscript {
     repositories {
-        mavenCentral()
+        jcenter()
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:1.0.0'
+        classpath 'com.android.tools.build:gradle:2.2.3'
     }
 }
 
 allprojects {
     repositories {
-        mavenCentral()
+        jcenter()
     }
+}
 
-    // Define constants common to all modules
-    ext {
-        appcompat_v7_version = '21.0.3'
-        support_v4_version = '21.0.3'
-        play_services_version = '7.0.+'
-    }
+task clean(type: Delete) {
+    delete rootProject.buildDir
 }
