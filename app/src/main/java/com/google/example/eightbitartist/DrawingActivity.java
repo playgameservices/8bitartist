@@ -827,7 +827,9 @@ public class DrawingActivity extends AppCompatActivity implements
                 int oldProgress = mGuessProgress.getProgress();
                 if (!mHasGuessed && oldProgress > 1) {
                     mGuessProgress.setProgress(oldProgress - 1);
-                    mGuessProgressText.setText(String.valueOf(oldProgress - 1));
+                    mGuessProgressText.setText(
+                            mNearbyClient.getState() + ": " +
+                                    String.valueOf(oldProgress - 1));
                     mGuessProgressHandler.postDelayed(this, 1000L);
 
                 }
