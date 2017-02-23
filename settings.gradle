@@ -1,1 +1,1 @@
-include ':app', ':libraries:BaseGameUtils'
+include ':app'

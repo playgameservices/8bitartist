@@ -36,10 +36,10 @@ public class ColorChooser extends View implements OnTouchListener {
     // Allow me to retrieve a list of colors, and someone to send selection events to.
     public interface ColorChooserListener {
         // Set selected color
-        public void setColor(short color);
+        void setColor(short color);
 
         // Find out what color is selected
-        public short getColor();
+        short getColor();
     }
 
     private ColorChooserListener mListener;

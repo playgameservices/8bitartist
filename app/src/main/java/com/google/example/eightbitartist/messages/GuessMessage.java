@@ -16,24 +16,22 @@
 package com.google.example.eightbitartist.messages;
 
 /**
- * Message containing the information about a guess entered by a non-artist player.
- *      guessIndex - the index (in mTurnWords) of the word chosen by the guesser.
- *      potentialPoints - the number of points the guesser should get if the guess is correct.
- *      guesserId - the endpointId of the guesser.
+ * Message containing the information about a guess entered by a
+ *   non-artist player.
+ * guessIndex - the index (in mTurnWords) of the word chosen by the guesser.
+ * potentialPoints - the number of points the guesser should get if
+ * the guess is correct.
+ * guesserId - the endpointId of the guesser.
  */
 public class GuessMessage extends Message {
-
-    public static final String TAG = GuessMessage.class.getSimpleName();
-
     private int guessIndex;
     private int potentialPoints;
     private String guesserId;
 
-    /** Default constructor required for Jackson **/
-    public GuessMessage() {}
+    public GuessMessage() {
+    }
 
     public GuessMessage(int guessIndex, int potentialPoints, String guesserId) {
-        super(TAG);
         this.guessIndex = guessIndex;
         this.potentialPoints = potentialPoints;
         this.guesserId = guesserId;

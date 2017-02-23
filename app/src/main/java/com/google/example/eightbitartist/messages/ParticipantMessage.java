@@ -18,22 +18,20 @@ package com.google.example.eightbitartist.messages;
 import com.google.example.eightbitartist.DrawingParticipant;
 
 /**
- * Message indicating that a DrawingParticipant has either joined or left the match.
- *      DrawingParticipant drawingParticipant - the participant joining or leaving.
- *      boolean isJoining - true if the participant is joining, false if leaving.
+ * Message indicating that a DrawingParticipant has either joined or
+ *   left the match.
+ * DrawingParticipant drawingParticipant - the participant joining or leaving.
+ * boolean isJoining - true if the participant is joining, false if leaving.
  */
 public class ParticipantMessage extends Message {
-
-    public static final String TAG = ParticipantMessage.class.getSimpleName();
 
     private DrawingParticipant drawingParticipant;
     private boolean isJoining = true;
 
-    /** Default constructor required for Jackson **/
-    public ParticipantMessage() {}
+    public ParticipantMessage() {
+    }
 
     public ParticipantMessage(DrawingParticipant drawingParticipant) {
-        super(TAG);
         this.drawingParticipant = drawingParticipant;
     }
 

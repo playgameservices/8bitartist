@@ -23,8 +23,8 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
-import android.support.v7.app.ActionBarActivity;
-import android.support.v7.widget.Toolbar;
+import android.support.annotation.NonNull;
+import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -39,8 +39,6 @@ import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.games.Games;
@@ -56,16 +54,17 @@ import com.google.android.gms.games.multiplayer.realtime.Room;
 import com.google.android.gms.games.multiplayer.realtime.RoomConfig;
 import com.google.android.gms.games.multiplayer.realtime.RoomStatusUpdateListener;
 import com.google.android.gms.games.multiplayer.realtime.RoomUpdateListener;
-import com.google.android.gms.plus.Plus;
 import com.google.example.eightbitartist.messages.ClearMessage;
 import com.google.example.eightbitartist.messages.EPointMessage;
 import com.google.example.eightbitartist.messages.GuessMessage;
 import com.google.example.eightbitartist.messages.Message;
+import com.google.example.eightbitartist.messages.MessageAdapter;
 import com.google.example.eightbitartist.messages.ParticipantMessage;
 import com.google.example.eightbitartist.messages.TurnMessage;
-import com.google.example.games.basegameutils.BaseGameUtils;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 
-import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -78,20 +77,20 @@ import java.util.Random;
  * The main Activity for all of 8BitArtist.  This Activity can show the UI for creating a match as
  * well as the UI for playing a match. The updateViewVisibility() function controls the visible
  * layout based on the state of the game.
- *
+ * <p>
  * There are two types of game play for 8BitArtist:
- *      1) Online Mode - this mode uses the Play Game Services RealTime Multiplayer APIs to connect
- *      up to 4 players at any location to play a real-time match. Players may leave once the game
- *      begins, but no new players may join. Playing in this mode requires the player to be signed
- *      in with his or her Play Games profile.
- *
- *      2) Party Mode - this mode uses the Play Game Services Nearby Connections API to connect
- *      any number of players who are connected to the same WiFi network. In this mode one player
- *      acts as the 'host' to begin the game while any other players nearby can join or leave the
- *      game at any time. Playing in this mode is totally anonymous and does not require the player
- *      to be signed in.
+ * 1) Online Mode - this mode uses the Play Game Services RealTime Multiplayer APIs to connect
+ * up to 4 players at any location to play a real-time match. Players may leave once the game
+ * begins, but no new players may join. Playing in this mode requires the player to be signed
+ * in with his or her Play Games profile.
+ * <p>
+ * 2) Party Mode - this mode uses the Play Game Services Nearby Connections API to connect
+ * any number of players who are connected to the same WiFi network. In this mode one player
+ * acts as the 'host' to begin the game while any other players nearby can join or leave the
+ * game at any time. Playing in this mode is totally anonymous and does not require the player
+ * to be signed in.
  */
-public class DrawingActivity extends ActionBarActivity implements
+public class DrawingActivity extends AppCompatActivity implements
         GoogleApiClient.ConnectionCallbacks,
         GoogleApiClient.OnConnectionFailedListener,
         OnInvitationReceivedListener,
@@ -124,8 +123,8 @@ public class DrawingActivity extends ActionBarActivity implements
     // Should the sign-in flow be started automatically?
     private boolean mAutoStartSignInFlow = true;
 
-    // Jackson JSON Processing
-    private ObjectMapper mMapper;
+    //  JSON Processing
+    private Gson mMapper;
 
     // AlertDialog for showing messages to the user
     private AlertDialog mAlertDialog;
@@ -181,9 +180,6 @@ public class DrawingActivity extends ActionBarActivity implements
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        // Set up Toolbar
-        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
-        setSupportActionBar(toolbar);
 
         // Set up guesser progress
         mGuessProgress = (ProgressBar) findViewById(R.id.guessProgress);
@@ -215,7 +211,6 @@ public class DrawingActivity extends ActionBarActivity implements
         mGoogleApiClient = new GoogleApiClient.Builder(this)
                 .addConnectionCallbacks(this)
                 .addOnConnectionFailedListener(this)
-                .addApi(Plus.API).addScope(Plus.SCOPE_PLUS_LOGIN)
                 .addApi(Games.API).addScope(Games.SCOPE_GAMES)
                 .build();
 
@@ -223,8 +218,9 @@ public class DrawingActivity extends ActionBarActivity implements
         mServiceId = getString(R.string.app_id);
 
         // Create the object mapper
-        mMapper = new ObjectMapper();
-        mMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        mMapper = new GsonBuilder().registerTypeAdapter(Message.class,
+                new MessageAdapter())
+                .create();
 
         // Initialize DrawView and ColorChooser
         mDrawView = ((DrawView) findViewById(R.id.drawView));
@@ -242,6 +238,7 @@ public class DrawingActivity extends ActionBarActivity implements
     protected void onStart() {
         super.onStart();
         mGoogleApiClient.connect();
+
     }
 
     @Override
@@ -301,7 +298,7 @@ public class DrawingActivity extends ActionBarActivity implements
     }
 
     @Override
-    public void onConnectionFailed(ConnectionResult connectionResult) {
+    public void onConnectionFailed(@NonNull ConnectionResult connectionResult) {
         if (mResolvingConnectionFailure) {
             Log.i(TAG, "onConnectionFailed: already resolving.");
             return;
@@ -378,24 +375,26 @@ public class DrawingActivity extends ActionBarActivity implements
             }
 
             @Override
-            public void onConnectedToEndpoint(String endpointId, String deviceId,
-                                              String endpointName) {
+            public void onConnectedToEndpoint(String endpointId, String
+                    endpointName) {
 
-                mMyPersistentId = mNearbyClient.getMyDeviceId();
-                DrawingParticipant me = new DrawingParticipant(mNearbyClient.getMyEndpointId(),
-                        mMyPersistentId, "Me");
+                mMyPersistentId = "";
+                DrawingParticipant me = new DrawingParticipant("local", "Me");
                 onParticipantConnected(me);
 
                 // Add participant
-                DrawingParticipant participant = new DrawingParticipant(endpointId, deviceId,
-                        endpointName);
+                DrawingParticipant participant = new DrawingParticipant
+                        (endpointId, endpointName);
                 onParticipantConnected(participant);
 
                 // Send all participants to all other participants
                 for (DrawingParticipant dp : mParticipants.values()) {
+
                     ParticipantMessage msg = new ParticipantMessage(dp);
-                    mNearbyClient.sendMessageToAll(msg.persist(mMapper).getBytes(),
+                    mNearbyClient.sendMessageToAll(mMapper.toJson(msg,
+                            Message.class),
                             dp.getMessagingId());
+
                 }
 
                 if (mParticipants.size() <= 2) {
@@ -404,7 +403,9 @@ public class DrawingActivity extends ActionBarActivity implements
                 } else {
                     // Otherwise, send them the current game state
                     TurnMessage turnMsg = new TurnMessage(mMatchTurnNumber, mTurnWords, mWordIndex);
-                    mNearbyClient.sendMessageTo(endpointId, turnMsg.persist(mMapper).getBytes());
+                    mNearbyClient.sendMessageTo(endpointId, mMapper.toJson
+                            (turnMsg, Message.class));
+
 
                     beginMyTurn();
                 }
@@ -416,7 +417,7 @@ public class DrawingActivity extends ActionBarActivity implements
                 // Tell other clients it was disconnected
                 ParticipantMessage msg = new ParticipantMessage(mParticipants.get(deviceId));
                 msg.setIsJoining(false);
-                mNearbyClient.broadcastMessage(msg.persist(mMapper).getBytes());
+                mNearbyClient.broadcastMessage(mMapper.toJson(msg));
 
                 DrawingActivity.this.onParticipantDisconnected(endpointId, deviceId);
             }
@@ -424,7 +425,8 @@ public class DrawingActivity extends ActionBarActivity implements
             @Override
             public void onMessageReceived(String remoteEndpointId, byte[] payload) {
                 // The host forwards most messages to all clients.
-                mNearbyClient.sendMessageToAll(payload, remoteEndpointId);
+                mNearbyClient.sendMessageToAll(new String(payload),
+                        remoteEndpointId);
 
                 // Parse messages normally
                 DrawingActivity.this.onMessageReceived(payload);
@@ -452,7 +454,7 @@ public class DrawingActivity extends ActionBarActivity implements
             }
 
             @Override
-            public void onConnectedToEndpoint(String hostId, String deviceId, String hostName) {
+            public void onConnectedToEndpoint(String hostId, String hostName) {
                 Log.d(TAG, "onConnectedToEndpoint");
                 dismissSpinner();
 
@@ -460,13 +462,12 @@ public class DrawingActivity extends ActionBarActivity implements
                 mIsJoinedParty = true;
 
                 // Add self to participants
-                mMyPersistentId = mNearbyClient.getMyDeviceId();
-                DrawingParticipant me = new DrawingParticipant(mNearbyClient.getMyEndpointId(),
-                        mMyPersistentId, "Me");
+                mMyPersistentId = "localhost";
+                DrawingParticipant me = new DrawingParticipant("local", "Me");
                 onParticipantConnected(me);
 
                 // Add host to participants
-                DrawingParticipant participant = new DrawingParticipant(hostId, deviceId, hostName);
+                DrawingParticipant participant = new DrawingParticipant(hostId, hostName);
                 onParticipantConnected(participant);
 
                 // Start the appropriate turn
@@ -487,10 +488,10 @@ public class DrawingActivity extends ActionBarActivity implements
 
     /**
      * Controls the UI for all game screens. Can show one of the following based on the game state:
-     *      1) Signed out home screen UI
-     *      2) Signed in home screen UI
-     *      3) In-game UI for the Artist
-     *      4) In-game UI for a Guesser
+     * 1) Signed out home screen UI
+     * 2) Signed in home screen UI
+     * 3) In-game UI for the Artist
+     * 4) In-game UI for a Guesser
      */
     private void updateViewVisibility() {
         boolean inParty = mIsHostingParty || mIsJoinedParty;
@@ -556,6 +557,7 @@ public class DrawingActivity extends ActionBarActivity implements
         mAlertDialog = alertDialogBuilder.create();
         mAlertDialog.show();
     }
+
 
     @Override
     public void onActivityResult(int request, int response, Intent data) {
@@ -640,7 +642,7 @@ public class DrawingActivity extends ActionBarActivity implements
 
             // Send turn message to others
             TurnMessage turnMessage = new TurnMessage(0, mTurnWords, mWordIndex);
-            sendReliableMessageToOthers(turnMessage.persist(mMapper).getBytes());
+            sendReliableMessageToOthers(turnMessage);
         }
 
         beginMyTurn();
@@ -654,6 +656,7 @@ public class DrawingActivity extends ActionBarActivity implements
     /**
      * Determines if the current player is drawing or guessing. Used to determine what UI to show
      * and what messages to send.
+     *
      * @return true if the current player is the artist, false otherwise.
      */
     private boolean isMyTurn() {
@@ -725,7 +728,7 @@ public class DrawingActivity extends ActionBarActivity implements
     public void onDrawEvent(int gridX, int gridY, short colorIndex) {
         // Send realtime message to others
         EPointMessage msg = new EPointMessage(new EPoint(gridX, gridY), colorIndex);
-        sendReliableMessageToOthers(msg.persist(mMapper).getBytes());
+        sendReliableMessageToOthers(msg);
     }
 
     /**
@@ -735,12 +738,13 @@ public class DrawingActivity extends ActionBarActivity implements
         mDrawView.clear();
 
         ClearMessage msg = new ClearMessage();
-        sendReliableMessageToOthers(msg.persist(mMapper).getBytes());
+        sendReliableMessageToOthers(msg);
     }
 
     /**
      * Create a Dialog with the result of the local player's guess.
-     * @param guessIndex the index in the word list that the player clicked.
+     *
+     * @param guessIndex   the index in the word list that the player clicked.
      * @param correctIndex the index in the word list of the correct answer.
      */
     private void createGuessDialog(int guessIndex, int correctIndex) {
@@ -774,6 +778,7 @@ public class DrawingActivity extends ActionBarActivity implements
 
     /**
      * Create a dialog with the result of another player's guess.
+     *
      * @param guesserId the participant ID of the player that guessed.
      */
     private void createOpponentGuessDialog(String guesserId) {
@@ -790,6 +795,7 @@ public class DrawingActivity extends ActionBarActivity implements
 
     /**
      * Show or hide the word choice list for guessing.
+     *
      * @param enable true if the list should be shown, false otherwise.
      */
     private void enableGuessing(boolean enable) {
@@ -821,8 +827,11 @@ public class DrawingActivity extends ActionBarActivity implements
                 int oldProgress = mGuessProgress.getProgress();
                 if (!mHasGuessed && oldProgress > 1) {
                     mGuessProgress.setProgress(oldProgress - 1);
-                    mGuessProgressText.setText(String.valueOf(oldProgress - 1));
+                    mGuessProgressText.setText(
+                            mNearbyClient.getState() + ": " +
+                                    String.valueOf(oldProgress - 1));
                     mGuessProgressHandler.postDelayed(this, 1000L);
+
                 }
             }
         };
@@ -843,7 +852,9 @@ public class DrawingActivity extends ActionBarActivity implements
         updateViewVisibility();
     }
 
-    /** Begin the player's turn, calling the correct beginTurn function based on role **/
+    /**
+     * Begin the player's turn, calling the correct beginTurn function based on role
+     **/
     private void beginMyTurn() {
         Log.d(TAG, "beginMyTurn: " + isMyTurn());
         if (isMyTurn()) {
@@ -868,7 +879,8 @@ public class DrawingActivity extends ActionBarActivity implements
 
         // Send new turn data to others
         TurnMessage turnMessage = new TurnMessage(mMatchTurnNumber, mTurnWords, mWordIndex);
-        sendReliableMessageToOthers(turnMessage.persist(mMapper).getBytes());
+        sendReliableMessageToOthers(turnMessage);
+
 
         // Increment turn achievements
         if (isSignedIn() && checkConfiguration(false)) {
@@ -884,6 +896,7 @@ public class DrawingActivity extends ActionBarActivity implements
 
     /**
      * Pick a random set of words from the master word list.
+     *
      * @param numWords the number of words to choose.
      * @return a list of randomly chosen words.
      */
@@ -899,6 +912,7 @@ public class DrawingActivity extends ActionBarActivity implements
 
     /**
      * Record my guess, incrementing score if necessary and informing all other players.
+     *
      * @param position the index in the word list of my guess.
      */
     private void makeGuess(int position) {
@@ -907,7 +921,7 @@ public class DrawingActivity extends ActionBarActivity implements
 
         // Send my guess to other players
         GuessMessage guessMessage = new GuessMessage(position, potentialPoints, mMyPersistentId);
-        sendReliableMessageToOthers(guessMessage.persist(mMapper).getBytes());
+        sendReliableMessageToOthers(guessMessage);
 
         // Disable guessing and show result
         enableGuessing(false);
@@ -1054,16 +1068,33 @@ public class DrawingActivity extends ActionBarActivity implements
         startActivityForResult(i, RC_WAITING_ROOM);
     }
 
+
+    private void sendReliableMessageToOthers(Message msg) {
+        sendReliableMessageToOthers(mMapper.toJson(msg, Message.class));
+    }
+
     /**
      * Send a reliable message to all other participants. If this is an RTMP game, send a reliable
      * message to each player directly. If this is a Nearby Connections game, send a message to the
      * host who will broadcast it to all connected players.
-     * @param data bytes to send in the message.
+     *
+     * @param message string to send in the message.
      */
-    private void sendReliableMessageToOthers(byte[] data) {
+    private void sendReliableMessageToOthers(String message) {
+
+        byte[] data = null;
+
         DrawingParticipant me = mParticipants.get(mMyPersistentId);
         for (DrawingParticipant participant : mParticipants.values()) {
             if (!participant.equals(me) && !participant.getIsLocal()) {
+                if (data == null) {
+                    try {
+                        data = message.getBytes("UTF-8");
+                    } catch (UnsupportedEncodingException e) {
+                        Log.e(TAG, "Could not encode " + message + " as UTF-8?");
+                        return;
+                    }
+                }
                 // The participant is RTMP and not sending message to myself
                 Games.RealTimeMultiplayer.sendReliableMessage(mGoogleApiClient, null,
                         data, mRoom.getRoomId(), participant.getMessagingId());
@@ -1073,13 +1104,14 @@ public class DrawingActivity extends ActionBarActivity implements
         // Party mode, route messages through host
         if (mIsJoinedParty || mIsHostingParty) {
             Log.d(TAG, "Broadcasting message.");
-            mNearbyClient.broadcastMessage(data);
+            mNearbyClient.broadcastMessage(message);
         }
     }
 
     /**
      * Add points to a player's score, local copy only.
-     * @param id the participant ID to update.
+     *
+     * @param id        the participant ID to update.
      * @param numPoints number of points to add to the score.
      */
     private void incrementPlayerScore(String id, int numPoints) {
@@ -1091,7 +1123,8 @@ public class DrawingActivity extends ActionBarActivity implements
      * Remove a participant. If this is RTMP and you are now the only player in the room, leave the
      * room as well and end the game. If this is a Nearby Connections game and the host has
      * disconnected, leave the game and display an error.
-     * @param messagingId the messaging ID of the player that disconnected.
+     *
+     * @param messagingId  the messaging ID of the player that disconnected.
      * @param persistentId the persistent ID of the player that disconnected.
      */
     private void onParticipantDisconnected(String messagingId, String persistentId) {
@@ -1122,6 +1155,7 @@ public class DrawingActivity extends ActionBarActivity implements
 
     /**
      * RTMP Participant joined, register the DrawingParticipant if the Participant is connected.
+     *
      * @param p the Participant from the Real-Time Multiplayer match.
      */
     private void onParticipantConnected(Participant p) {
@@ -1133,6 +1167,7 @@ public class DrawingActivity extends ActionBarActivity implements
     /**
      * Add a DrawingParticipant to the ongoing game and update turn order. If the
      * DrawingParticipant is a duplicate, this method does nothing.
+     *
      * @param dp the DrawingParticipant to add.
      */
     private void onParticipantConnected(DrawingParticipant dp) {
@@ -1157,75 +1192,75 @@ public class DrawingActivity extends ActionBarActivity implements
      * Message handler for RTMP and Nearby Connections messages. First decodes as a general Message
      * and then uses the type attribute to determine which class the message originally was. Then
      * deserializes to a specific message class and takes the appropriate action,
-     * @param data byte array of data to deserialize.
+     *
+     * @param bytes byte array of data to deserialize.
      */
-    private void onMessageReceived(byte[] data) {
-        Log.d(TAG, "Message: " + new String(data));
+    private void onMessageReceived(byte[] bytes) {
+        String data = new String(bytes);
+        Log.d(TAG, "Message: " + data);
 
-        try {
-            // Parse JSON message using Jackson
-            Message message = mMapper.readValue(data, Message.class);
+        // Parse JSON message.
+        Message message = mMapper.fromJson(data, Message.class);
 
-            // Branch on message type
-            if (message.getType().equals(EPointMessage.TAG)) {
-                // EPointMessage - draw a point on the DrawView
-                EPointMessage msg = mMapper.readValue(data, EPointMessage.class);
-                mDrawView.setMacroPixel(msg.getPoint().x, msg.getPoint().y, (short) msg.getColor());
-            } else if (message.getType().equals(ClearMessage.TAG)) {
-                // ClearMessage - clear the DrawView
-                mDrawView.clear();
-            } else if (message.getType().equals(TurnMessage.TAG)) {
-                // TurnMessage - set all turn-specific data
-                TurnMessage msg = mMapper.readValue(data, TurnMessage.class);
-                mMatchTurnNumber = msg.getTurnNumber();
-                mTurnWords = msg.getWords();
-                mWordIndex = msg.getCorrectWord();
-                mGuessersThisTurn.clear();
+        // Branch on message type
+        if (message instanceof EPointMessage) {
+            // EPointMessage - draw a point on the DrawView
+            EPointMessage msg = (EPointMessage) message;
+            mDrawView.setMacroPixel(msg.getPoint().x, msg.getPoint().y, (short) msg.getColor());
+        } else if (message instanceof ClearMessage) {
+            // ClearMessage - clear the DrawView
+            mDrawView.clear();
+        } else if (message instanceof TurnMessage) {
+            // TurnMessage - set all turn-specific data
+            TurnMessage msg = (TurnMessage) message;
+            mMatchTurnNumber = msg.getTurnNumber();
+            mTurnWords = msg.getWords();
+            mWordIndex = msg.getCorrectWord();
+            mGuessersThisTurn.clear();
 
-                beginMyTurn();
-            } else if (message.getType().equals(GuessMessage.TAG)) {
-                // GuessMessage - record an opponent's guess
-                GuessMessage msg = mMapper.readValue(data, GuessMessage.class);
-                createOpponentGuessDialog(msg.getGuesserId());
+            beginMyTurn();
+        } else if (message instanceof GuessMessage) {
+            // GuessMessage - record an opponent's guess
+            GuessMessage msg = (GuessMessage) message;
+            createOpponentGuessDialog(msg.getGuesserId());
 
-                if (msg.getGuessIndex() == mWordIndex) {
-                    // The guess was correct, award a point
-                    incrementPlayerScore(msg.getGuesserId(), msg.getPotentialPoints());
-                }
-            } else if (message.getType().equals(ParticipantMessage.TAG)) {
-                // ParticipantMessage - add or remove a participant
-                ParticipantMessage msg = mMapper.readValue(data, ParticipantMessage.class);
-                DrawingParticipant participant = msg.getDrawingParticipant();
-
-                if (msg.getIsJoining()) {
-                    if (mOldParticipants.containsKey(participant.getPersistentId())) {
-                        Log.d(TAG, "Participant rejoining: " + participant.getPersistentId());
-                        // This participant was in the game before, add and recover
-                        DrawingParticipant oldParticipant = mOldParticipants.remove(
-                                participant.getPersistentId());
-                        mParticipants.put(participant.getPersistentId(), oldParticipant);
-
-                        // Tell everyone what their old score was
-                        ParticipantMessage updateMsg = new ParticipantMessage(oldParticipant);
-                        mNearbyClient.sendMessageToAll(updateMsg.persist(mMapper).getBytes(), null);
-                    } else if (mParticipants.containsKey(participant.getPersistentId())) {
-                        // Current participant, update the score
-                        mParticipants.get(participant.getPersistentId()).setScore(
-                                participant.getScore());
-                        onParticipantConnected(participant);
-                    } else {
-                        // Add new participant
-                        onParticipantConnected(participant);
-                    }
-                } else {
-                    onParticipantDisconnected(participant.getMessagingId(), participant.getPersistentId());
-                }
-
-                updateTurnIndices();
-                updateViewVisibility();
+            if (msg.getGuessIndex() == mWordIndex) {
+                // The guess was correct, award a point
+                incrementPlayerScore(msg.getGuesserId(), msg.getPotentialPoints());
             }
-        } catch (IOException e) {
-            Log.e(TAG, "Could not read message.", e);
+        } else if (message instanceof ParticipantMessage) {
+            // ParticipantMessage - add or remove a participant
+            ParticipantMessage msg = (ParticipantMessage) message;
+            DrawingParticipant participant = msg.getDrawingParticipant();
+
+            if (msg.getIsJoining()) {
+                if (mOldParticipants.containsKey(participant.getPersistentId())) {
+                    Log.d(TAG, "Participant rejoining: " + participant.getPersistentId());
+                    // This participant was in the game before, add and recover
+                    DrawingParticipant oldParticipant = mOldParticipants.remove(
+                            participant.getPersistentId());
+                    mParticipants.put(participant.getPersistentId(), oldParticipant);
+
+                    // Tell everyone what their old score was
+                    ParticipantMessage updateMsg = new ParticipantMessage(oldParticipant);
+                    mNearbyClient.sendMessageToAll(mMapper.toJson
+                            (updateMsg, Message.class), null);
+                } else if (mParticipants.containsKey(participant.getPersistentId())) {
+                    // Current participant, update the score
+                    mParticipants.get(participant.getPersistentId()).setScore(
+                            participant.getScore());
+                    onParticipantConnected(participant);
+                } else {
+                    // Add new participant
+                    onParticipantConnected(participant);
+                }
+            } else {
+                onParticipantDisconnected(participant.getMessagingId(),
+                        participant.getPersistentId());
+            }
+
+            updateTurnIndices();
+            updateViewVisibility();
         }
     }
 
@@ -1234,7 +1269,8 @@ public class DrawingActivity extends ActionBarActivity implements
         Log.d(TAG, "onRoomCreated: " + statusCode + ":" + room);
         if (statusCode != GamesStatusCodes.STATUS_OK) {
             Log.w(TAG, "Error in onRoomCreated: " + statusCode);
-            Toast.makeText(this, "Error creating room.", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "Error creating room.",
+                    Toast.LENGTH_SHORT).show();
             dismissSpinner();
             return;
         }
@@ -1310,7 +1346,7 @@ public class DrawingActivity extends ActionBarActivity implements
 
     @Override
     public void onPeerInvitedToRoom(Room room, List<String> strings) {
-        Log.d(TAG, "onPeerInvitedToRoom: "  + room + ":" + strings);
+        Log.d(TAG, "onPeerInvitedToRoom: " + room + ":" + strings);
     }
 
     @Override
@@ -1338,7 +1374,8 @@ public class DrawingActivity extends ActionBarActivity implements
         mRoom = room;
 
         // Add self to participants
-        mMyPersistentId = mRoom.getParticipantId(Games.Players.getCurrentPlayerId(mGoogleApiClient));
+        mMyPersistentId = mRoom.getParticipantId(
+                Games.Players.getCurrentPlayerId(mGoogleApiClient));
         Participant me = mRoom.getParticipant(mMyPersistentId);
         onParticipantConnected(me);
 
@@ -1390,7 +1427,7 @@ public class DrawingActivity extends ActionBarActivity implements
         boolean correctlyConfigured = true;
         for (int id : ids) {
             if ("REPLACE_ME".equals(getString(id))) {
-               correctlyConfigured = false;
+                correctlyConfigured = false;
             }
         }
 

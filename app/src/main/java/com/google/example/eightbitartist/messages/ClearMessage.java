@@ -21,9 +21,7 @@ package com.google.example.eightbitartist.messages;
  */
 public class ClearMessage extends Message {
 
-    public static final String TAG = ClearMessage.class.getSimpleName();
-
     public ClearMessage() {
-        super(TAG);
+
     }
 }
