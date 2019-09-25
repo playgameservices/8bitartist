@@ -23,6 +23,8 @@ cannot join or re-join a game that is already in progress.  This mode also
 uses the [Achievements](https://developers.google.com/games/services/android/achievements) 
 API, which rewards players for achieving certain in-game milestones.
 
+> **Warning:** Real-time and turn-based multiplayer services are deprecated as of September 16th, 2019. These services are unavailable for new games. For more information, see [Ending support for multiplayer APIs in Play Games Services](https://support.google.com/googleplay/android-developer/answer/9469745).
+
 ### Nearby Connections Mode ("Party" Mode)
 In party mode, you can play 8 Bit Artist against 2+ people with devices 
 connected to the same WiFi network.  In this mode there is no need to sign in 
